@@ -13,7 +13,11 @@ const server = new McpServer({
   name: CONFIG.mcp.name,
   version: CONFIG.mcp.version,
   description: CONFIG.mcp.description
-});
+},{
+    capabilities: {
+      tools: {},
+    },
+  });
 
 // 注册飞书相关工具
 registerFeishuTools(server);
