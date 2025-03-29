@@ -12,26 +12,49 @@
 
 ### create_record
 
-在飞书多维表格中创建一条新
+在飞书多维表格中创建一条新记录
 
-### create_table
+### update_record
 
-创建飞书多维表格中的一个新数据表。
-
+在飞书多维表格中更新一条记录
 
 ### search_records
 
-在多维表格中搜索符合条件的记录。
-
+在多维表格中搜索符合条件的记录
 
 ### delete_record
 
-删除多维表格中的一条记录。
+删除多维表格中的一条记录
 
 
 ### create_bitable_app
 
-创建一个新的飞书多维表格应用。
+创建一个新的飞书多维表格应用
+
+### create_table
+
+创建飞书多维表格中的一个新数据表
+
+
+## Development
+```sh
+# Install dependencies
+npm install
+
+# Build
+npm run build
+
+# Dev
+npm run dev
+
+```
+
+
+
+
+
+
+
 
 
 ## 飞书API参考
