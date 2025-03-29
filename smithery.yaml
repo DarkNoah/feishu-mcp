@@ -6,6 +6,7 @@ startCommand:
     type: object
     required:
       - appId
+      - appSecret
     properties:
       appId:
         type: string
@@ -23,5 +24,7 @@ startCommand:
         "dist/index.js"
       ],
       "env": {
+        FEISHU_APPID: config.appId,
+        FEISHU_APPSECRET: config.appSecret,
       }
     })

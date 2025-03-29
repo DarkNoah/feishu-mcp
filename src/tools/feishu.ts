@@ -4,25 +4,44 @@ import axios, { AxiosError } from 'axios';
 import { CONFIG } from '../config.js';
 import * as lark from '@larksuiteoapi/node-sdk';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import * as dotenv from 'dotenv';
 
+dotenv.config();
+
+
+let client :lark.Client|undefined ;
+
+
+const getClient = (): lark.Client => { 
+  const configIndex = process.argv.findIndex(x => x == "--config");
+  let configObj;
+  if (configIndex >= 0) {
+    const configJson = process.argv[configIndex + 1];
+    if (!configJson) throw new Error("请使用 --config 参数指定配置文件");
+    configObj = JSON.parse(configJson);
+
+  }
+  
+  const appId = process.env.FEISHU_APPID || configObj?.appId;
+  const appSecret = process.env.FEISHU_APPSECRET || configObj?.appSecret;
+  if (!appId || !appSecret) {
+    throw new Error("appId 和 appSecret 不能为空");
+  }
+  if (client) {
+    return client;
+  }
+
+  client = new lark.Client({
+    appId: appId,
+    appSecret: appSecret
+  });
+  return client;
+}
 /**
  * 注册所有飞书相关工具到MCP服务器
  */
 export function registerFeishuTools(server: McpServer) {
-  const configIndex = process.argv.findIndex(x => x == "--config");
-  if (configIndex == -1) throw new Error("请使用 --config 参数指定配置文件");
-  const configJson = process.argv[configIndex + 1];
-  if (!configJson) throw new Error("请使用 --config 参数指定配置文件");
-  const configObj = JSON.parse(configJson);
-  const appId = configObj.appId;
-  const appSecret = configObj.appSecret;
-  if (!appId || !appSecret) {
-    throw new Error("appId 和 appSecret 不能为空");
-  }
-  const client = new lark.Client({
-    appId: appId,
-    appSecret: appSecret
-  });
+  
   // 注册创建多维表格记录工具
   server.tool(
     "create_record",
@@ -36,18 +55,24 @@ export function registerFeishuTools(server: McpServer) {
       appToken: string;
       tableId: string;
       fields: string;
-    }):Promise<CallToolResult> => {
-      const result = await client.bitable.v1.appTableRecord.create({
-          data: {
-            fields: JSON.parse(fields)
-          },
-          path: {
-            app_token: appToken,
-            table_id: tableId
-          }
-      })
+    }): Promise<CallToolResult> => {
+      try {
+        const result = await getClient().bitable.v1.appTableRecord.create({
+            data: {
+              fields: JSON.parse(fields)
+            },
+            path: {
+              app_token: appToken,
+              table_id: tableId
+            }
+        })
+        return { content: [{ type: "text", text: "Success:\n"+JSON.stringify(result.data?.record) }] };
+
+      } catch (error:any) { 
+
+        return { content: [{ type: "text", text: "Error:\n"+(error?.response?.data?.msg || error?.message) }] };
+      }
       
-      return { content: [{ type: "text", text: JSON.stringify(result) }] };
     }
   );
   // 注册搜索多维表格记录工具
@@ -74,7 +99,8 @@ export function registerFeishuTools(server: McpServer) {
       fieldNames?: string[];
       viewId?: string;
       }): Promise<CallToolResult> => {
-      const result = await client.bitable.v1.appTableRecord.search({
+      try {
+        const result = await getClient().bitable.v1.appTableRecord.search({
           data: {
             view_id: viewId,
             filter: filter ? JSON.parse(filter) : undefined,
@@ -84,7 +110,11 @@ export function registerFeishuTools(server: McpServer) {
             table_id: tableId
           }
         })
-        return { content: [{ type: "text", text: JSON.stringify(result) }] };
+        return { content: [{ type: "text", text: "Success:\n"+JSON.stringify(result.data) }] };
+      }
+      catch (error:any) { 
+        return { content: [{ type: "text", text: "Error:\n"+(error?.response?.data?.msg || error?.message) }] };
+      }
     }
   );
 
@@ -101,15 +131,20 @@ export function registerFeishuTools(server: McpServer) {
       appToken: string;
       tableId: string;
       recordId: string;
-    }):Promise<CallToolResult> => {
-      const result = await client.bitable.v1.appTableRecord.delete({
+    }): Promise<CallToolResult> => {
+      try {
+        const result = await getClient().bitable.v1.appTableRecord.delete({
           path: {
             app_token: appToken,
             table_id: tableId,
             record_id: recordId
           }
         })
-        return { content: [{ type: "text", text: JSON.stringify(result) }] };
+        return { content: [{ type: "text", text: "Success\n" + JSON.stringify(result.data) }] };
+      }
+      catch (error:any) { 
+        return { content: [{ type: "text", text: "Error:\n"+(error?.response?.data?.msg || error?.message) }] };
+      }
     }
   );
 
@@ -128,19 +163,24 @@ export function registerFeishuTools(server: McpServer) {
       tableId: string;
       recordId: string;
       fields: string;
-    }):Promise<CallToolResult> => {
-      const result = await client.bitable.v1.appTableRecord.update({
-          data: {
-            fields: JSON.parse(fields)
-          },
-          path: {
-            app_token: appToken,
-            table_id: tableId,
-            record_id: recordId
-          }
-      })
+    }): Promise<CallToolResult> => {
       
-      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+      try {
+        const result = await getClient().bitable.v1.appTableRecord.update({
+            data: {
+              fields: JSON.parse(fields)
+            },
+            path: {
+              app_token: appToken,
+              table_id: tableId,
+              record_id: recordId
+            }
+        })
+        return { content: [{ type: "text", text: "Error:\n"+JSON.stringify(result.data?.record) }] };
+      }
+      catch (error:any) { 
+        return { content: [{ type: "text", text: "Error:\n"+(error?.response?.data?.msg || error?.message) }] };
+      }
     }
   );
 
@@ -158,14 +198,19 @@ export function registerFeishuTools(server: McpServer) {
     async ({ name, folderToken }: {
       name: string;
       folderToken?: string;
-    }):Promise<CallToolResult> => {
-      const result = await client.bitable.v1.app.create({
+    }): Promise<CallToolResult> => {
+      try {
+        const result = await getClient().bitable.v1.app.create({
           data: {
             name: name,
             folder_token: folderToken,
           }
         })
-        return { content: [{ type: "text", text: JSON.stringify(result) }] };
+        return { content: [{ type: "text", text: "Success:\n"+JSON.stringify(result.data?.app) }] };
+      }
+      catch (error:any) { 
+        return { content: [{ type: "text", text: "Error:\n"+(error?.response?.data?.msg || error?.message) }] };
+      }
     }
   );
 
@@ -183,8 +228,9 @@ export function registerFeishuTools(server: McpServer) {
       name: string;
       description?: string;
       fields?: string;
-    }):Promise<CallToolResult> => {
-      const result = await client.bitable.v1.appTable.create({
+    }): Promise<CallToolResult> => {
+      try {
+        const result = await getClient().bitable.v1.appTable.create({
           data: {
           table: {
               name: name,
@@ -195,7 +241,11 @@ export function registerFeishuTools(server: McpServer) {
             app_token: appToken
           }
         })
-        return { content: [{ type: "text", text: JSON.stringify(result) }] };
+        return { content: [{ type: "text", text: "Success:\n"+JSON.stringify(result.data) }] };
+      }
+      catch (error:any) { 
+        return { content: [{ type: "text", text: "Error:\n"+(error?.response?.data?.msg || error?.message) }] };
+      }
     }
   );
 
