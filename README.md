@@ -47,6 +47,12 @@ npm run build
 # Dev
 npm run dev
 
+# run mcp stdio
+node dist/index.js --config "{\"appId\":\"xxx\",\"appSappSecret\":\"xxx\"}"
+
+# run mcp sse
+node dist/index.js --sse --config "{\"appId\":\"xxx\",\"appSappSecret\":\"xxx\"}"
+
 ```
 
 

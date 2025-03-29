@@ -6,8 +6,7 @@ import { registerFeishuTools } from './tools/feishu.js';
 import { CONFIG } from './config.js';
 
 // 解析命令行参数
-const args = process.argv.slice(2);
-const transportMode = args.includes('--sse') ?  'sse' : 'stdio' ;
+const transportMode = process.argv.includes('--sse') ?  'sse' : 'stdio' ;
 
 // 创建MCP服务器
 const server = new McpServer({
