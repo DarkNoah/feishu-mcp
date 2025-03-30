@@ -48,10 +48,10 @@ npm run build
 npm run dev
 
 # run mcp stdio
-node dist/index.js --config "{\"appId\":\"xxx\",\"appSappSecret\":\"xxx\"}"
+node dist/index.js --config "{\"appId\":\"xxx\",\"appSecret\":\"xxx\"}"
 
 # run mcp sse
-node dist/index.js --sse --config "{\"appId\":\"xxx\",\"appSappSecret\":\"xxx\"}"
+node dist/index.js --sse --config "{\"appId\":\"xxx\",\"appSecret\":\"xxx\"}"
 
 ```
 
