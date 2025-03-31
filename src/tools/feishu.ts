@@ -35,7 +35,8 @@ const getClient = (): lark.Client => {
 
   client = new lark.Client({
     appId: appId,
-    appSecret: appSecret
+    appSecret: appSecret,
+    disableTokenCache:false,
   });
   return client;
 }
@@ -89,7 +90,7 @@ export function registerFeishuTools(server: Server) {
           description: "创建飞书多维表格应用",
           inputSchema: zodToJsonSchema(z.object({
             name: z.string().describe("多维表格应用的名称"),
-            folderToken: z.string().optional().describe("文件夹的唯一标识符，用于指定新创建的多维表格所在的位置")
+            folderToken: z.string().optional().describe("文件夹的唯一标识符(非必须)，用于指定新创建的多维表格所在的位置")
           })),
         },
         {
@@ -98,7 +99,14 @@ export function registerFeishuTools(server: Server) {
           inputSchema: zodToJsonSchema(z.object({
             appToken: z.string().describe("多维表格的唯一标识符app_token"),
             name: z.string().describe("要创建的数据表名称"),
-            fields: z.string().optional().describe("要创建的字段列表，JSON格式。例如：[{\"name\":\"标题\",\"type\":\"text\"},{\"name\":\"状态\",\"type\":\"singleSelect\",\"property\":{\"options\":[{\"name\":\"未开始\"},{\"name\":\"进行中\"},{\"name\":\"已完成\"}]}}]")
+            fields: z.string().optional().describe(["要创建的字段列表，JSON格式。例如：[",
+              "{\"name\":\"表头名称(文本类型)\",\"type\":\"text\"},",
+              "{\"name\":\"表头名称(数值)\",\"type\":\"number\"},",
+              "{\"name\":\"表头名称(单选)\",\"type\":\"singleSelect\",\"property\":{\"options\":[{\"name\":\"未开始\"},{\"name\":\"进行中\"},{\"name\":\"已完成\"}]}},",
+              "{\"name\":\"表头名称(多选)\",\"type\":\"multipleSelect\",\"property\":{\"options\":[{\"name\":\"未开始\"},{\"name\":\"进行中\"},{\"name\":\"已完成\"}]}},",
+              "{\"name\":\"表头名称(日期)\",\"type\":\"date\"}",
+              "]",
+            "只能创建以上类型的字段"].join('\n'))
           })),
         },
       ],
@@ -187,13 +195,52 @@ export function registerFeishuTools(server: Server) {
           }
           return { content: [{ type: "text", text: "Success:\n" + JSON.stringify(result.data?.app) }] };
         }
-        case "create_table": { 
+        case "create_table": {
           const { appToken, name, fields } = request.params.arguments;
+
+
+          const fieldsInput = [] as any[];
+          (JSON.parse(fields as string) as any[]).forEach((field: any) => {
+            if (field.type == "text") {
+              fieldsInput.push({
+                field_name: field.name,
+                type: 1
+              })
+            }
+            else if (field.type == "number") {
+              fieldsInput.push({
+                field_name: field.name,
+                type: 2
+              })
+            }
+            else if (field.type == "singleSelect") {
+              fieldsInput.push({
+                field_name: field.name,
+                type: 3,
+                property: field.property
+              })
+            }
+            else if (field.type == "multipleSelect") {
+              fieldsInput.push({
+                field_name: field.name,
+                type: 4,
+                property: field.property
+              })
+            }
+            else if (field.type == "date") {
+              fieldsInput.push({
+                field_name: field.name,
+                type: 5
+              })
+            }
+          });
+
+
           const result = await getClient().bitable.v1.appTable.create({
             data: {
               table: {
                 name: name as string,
-                fields: fields ? JSON.parse(fields as string) : undefined
+                fields: fieldsInput
               }
             },
             path: {
