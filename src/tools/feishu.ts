@@ -12,7 +12,8 @@ dotenv.config();
 
 
 let client :lark.Client|undefined ;
-
+let tenantToken :string |  undefined ;
+let userToken: string | undefined;
 
 const getClient = (): lark.Client => { 
   const configIndex = process.argv.findIndex(x => x == "--config");
@@ -26,6 +27,8 @@ const getClient = (): lark.Client => {
   
   const appId = process.env.FEISHU_APPID || configObj?.appId;
   const appSecret = process.env.FEISHU_APPSECRET || configObj?.appSecret;
+  tenantToken = process.env.FEISHU_TENANTTOKEN || configObj?.tenantToken;
+  userToken = process.env.FEISHU_USERTOKEN || configObj?.userToken;
   if (!appId || !appSecret) {
     throw new Error("appId 和 appSecret 不能为空");
   }
@@ -36,7 +39,7 @@ const getClient = (): lark.Client => {
   client = new lark.Client({
     appId: appId,
     appSecret: appSecret,
-    disableTokenCache:false,
+    disableTokenCache: true
   });
   return client;
 }
@@ -53,7 +56,7 @@ export function registerFeishuTools(server: Server) {
           inputSchema: zodToJsonSchema(z.object({
             appToken: z.string().describe("多维表格的唯一标识符app_token"),
             tableId: z.string().describe("多维表格数据表的唯一标识符 table_id"),
-            fields: z.string().describe(`要增加一行多维表格记录的字段内容，JSON格式。例如：{"多行文本":"内容","单选":"选项1","多选":["选项1","选项2"],"复选框":true,"人员":[{"id":"ou_xxx"}]}`)
+            fields: z.string().describe(`要增加一行多维表格记录的字段内容，JSON格式。例如：{"多行文本":"内容","单选":"选项1","多选":["选项1","选项2"],"复选框":true,"日期":1674206443000,"超链接": {"text": "飞书多维表格官网", "link": "https://www.feishu.cn/product/base" }]}`)
           })),
         },
         {
@@ -82,7 +85,7 @@ export function registerFeishuTools(server: Server) {
             appToken: z.string().describe("多维表格的唯一标识符app_token"),
             tableId: z.string().describe("多维表格数据表的唯一标识符 table_id"),
             recordId: z.string().describe("要更新的记录的ID"),
-            fields: z.string().describe(`要增加一行多维表格记录的字段内容，JSON格式。例如：{"多行文本":"内容","单选":"选项1","多选":["选项1","选项2"],"复选框":true,"人员":[{"id":"ou_xxx"}]}`)
+            fields: z.string().describe(`要增加一行多维表格记录的字段内容，JSON格式。例如：{"多行文本":"内容","单选":"选项1","多选":["选项1","选项2"],"复选框":true,"日期":1674206443000,"超链接": {"text": "飞书多维表格官网", "link": "https://www.feishu.cn/product/base" }]}`)
           })),
         },
         {
@@ -100,11 +103,14 @@ export function registerFeishuTools(server: Server) {
             appToken: z.string().describe("多维表格的唯一标识符app_token"),
             name: z.string().describe("要创建的数据表名称"),
             fields: z.string().optional().describe(["要创建的字段列表，JSON格式。例如：[",
-              "{\"name\":\"表头名称(文本类型)\",\"type\":\"text\"},",
+              "{\"name\":\"表头名称(多行文本)\",\"type\":\"text\"},",
               "{\"name\":\"表头名称(数值)\",\"type\":\"number\"},",
               "{\"name\":\"表头名称(单选)\",\"type\":\"singleSelect\",\"property\":{\"options\":[{\"name\":\"未开始\"},{\"name\":\"进行中\"},{\"name\":\"已完成\"}]}},",
               "{\"name\":\"表头名称(多选)\",\"type\":\"multipleSelect\",\"property\":{\"options\":[{\"name\":\"未开始\"},{\"name\":\"进行中\"},{\"name\":\"已完成\"}]}},",
+              "{\"name\":\"表头名称(复选框)\",\"type\":\"checkbox\"},",
               "{\"name\":\"表头名称(日期)\",\"type\":\"date\"}",
+              "{\"name\":\"表头名称(超链接)\",\"type\":\"link\"}",
+              
               "]",
             "只能创建以上类型的字段"].join('\n'))
           })),
@@ -121,14 +127,14 @@ export function registerFeishuTools(server: Server) {
         case "create_record": { 
           const { appToken, tableId, fields } = request.params.arguments;
           const result = await getClient().bitable.v1.appTableRecord.create({
-              data: {
-                fields: JSON.parse(fields as string)
-              },
-              path: { 
-                app_token: appToken as string,
-                table_id: tableId as string
-              }
-          })
+            data: {
+              fields: JSON.parse(fields as string)
+            },
+            path: {
+              app_token: appToken as string,
+              table_id: tableId as string
+            }
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
           if (result.msg !='success') {
             throw new Error((result as any)?.error?.message);
           }
@@ -145,7 +151,7 @@ export function registerFeishuTools(server: Server) {
               app_token: appToken as string,
               table_id: tableId as string
             }
-          })
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
           if (result.msg !='success') {
             throw new Error((result as any)?.error?.message);
           }
@@ -159,7 +165,7 @@ export function registerFeishuTools(server: Server) {
               table_id: tableId as string,
               record_id: recordId as string
             }
-          })
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
           if (result.msg !='success') {
             throw new Error((result as any)?.error?.message);
           }
@@ -176,7 +182,7 @@ export function registerFeishuTools(server: Server) {
               table_id: tableId as string,
               record_id: recordId as string
             }
-          })
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
           if (result.msg !='success') {
             throw new Error((result as any)?.error?.message);
           }
@@ -189,7 +195,7 @@ export function registerFeishuTools(server: Server) {
               name: name as string,
               folder_token: folderToken as string
             }
-          })
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
           if (result.msg !='success') {
             throw new Error((result as any)?.error?.message);
           }
@@ -233,6 +239,18 @@ export function registerFeishuTools(server: Server) {
                 type: 5
               })
             }
+            else if (field.type == "link") {
+              fieldsInput.push({
+                field_name: field.name,
+                type: 15
+              })
+            }
+            else if (field.type == "checkbox") {
+              fieldsInput.push({
+                field_name: field.name,
+                type: 7
+              })
+            }
           });
 
 
@@ -246,7 +264,7 @@ export function registerFeishuTools(server: Server) {
             path: {
               app_token: appToken as string
             }
-          })
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
           if (result.msg !='success') {
             throw new Error((result as any)?.error?.message);
           }

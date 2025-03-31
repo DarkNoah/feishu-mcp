@@ -10,7 +10,7 @@ export const CONFIG = {
   // MCP服务器信息
   mcp: {
     name: "feishu-mcp-server",
-    version: "1.0.0",
+    version: "1.0.1",
     description: "提供飞书多维表格API功能的MCP服务器"
   }
 }; 

@@ -14,6 +14,12 @@ startCommand:
       appSecret:
         type: string
         description: "feishu appSecret"
+      # tenantToken:
+      #   type: string
+      #   description: "feishu tenantToken"
+      userToken:
+        type: string
+        description: "feishu userToken"
 
   commandFunction:
     # A function that produces the CLI command to start the MCP on stdio.
@@ -26,5 +32,7 @@ startCommand:
       "env": {
         FEISHU_APPID: config.appId,
         FEISHU_APPSECRET: config.appSecret,
+        // FEISHU_TENANTTOKEN: config.tenantToken
+        FEISHU_USERTOKEN: config.userToken
       }
     })
