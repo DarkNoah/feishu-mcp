@@ -39,7 +39,7 @@ const getClient = (): lark.Client => {
   client = new lark.Client({
     appId: appId,
     appSecret: appSecret,
-    disableTokenCache: true
+    disableTokenCache: userToken ? true:false
   });
   return client;
 }
@@ -121,6 +121,14 @@ export function registerFeishuTools(server: Server) {
               
               "]",
             "只能创建以上类型的字段"].join('\n'))
+          })),
+        },
+        {
+          name: "delete_table",
+          description: "删除飞书多维表格数据表",
+          inputSchema: zodToJsonSchema(z.object({
+            appToken: z.string().describe("多维表格的唯一标识符app_token"),
+            tableId: z.string().describe("多维表格数据表的唯一标识符 table_id"),
           })),
         },
       ],
@@ -273,8 +281,6 @@ export function registerFeishuTools(server: Server) {
               })
             }
           });
-
-
           const result = await getClient().bitable.v1.appTable.create({
             data: {
               table: {
@@ -290,6 +296,20 @@ export function registerFeishuTools(server: Server) {
             throw new Error((result as any)?.error?.message);
           }
           return { content: [{ type: "text", text: "Success:\n" + JSON.stringify(result.data) }] };
+        }
+        case "delete_table": { 
+          const { appToken, tableId } = request.params.arguments;
+          const result = await getClient().bitable.v1.appTable.delete({
+            path: {
+              app_token: appToken as string,
+              table_id: tableId as string
+            }
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
+          if (result.msg !='success') {
+            throw new Error((result as any)?.error?.message);
+          }
+          return { content: [{ type: "text", text: "Success:\n" + JSON.stringify(result.data) }] };
+
         }
         default: {
           return { content: [{ type: "text", text: "Error: 不支持的工具名称" }] };  
