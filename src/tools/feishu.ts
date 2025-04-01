@@ -89,6 +89,14 @@ export function registerFeishuTools(server: Server) {
           })),
         },
         {
+          name: "list_fields",
+          description: "获取多维表格数据表中的的所有字段",
+          inputSchema: zodToJsonSchema(z.object({
+            appToken: z.string().describe("多维表格的唯一标识符app_token"),
+            tableId: z.string().describe("多维表格数据表的唯一标识符 table_id"),
+          })),
+        },
+        {
           name: "create_bitable_app",
           description: "创建飞书多维表格应用",
           inputSchema: zodToJsonSchema(z.object({
@@ -187,6 +195,19 @@ export function registerFeishuTools(server: Server) {
             throw new Error((result as any)?.error?.message);
           }
           return { content: [{ type: "text", text: "Success:\n" + JSON.stringify(result.data?.record) }] };
+        }
+        case "list_fields": {
+          const { appToken, tableId } = request.params.arguments;
+          const result = await getClient().bitable.v1.appTableField.list({
+            path: {
+              app_token: appToken as string,
+              table_id: tableId as string,
+            }
+          }, userToken ? lark.withUserAccessToken(userToken) :  undefined)
+          if (result.msg !='success') {
+            throw new Error((result as any)?.error?.message);
+          }
+          return { content: [{ type: "text", text: "Success:\n" + JSON.stringify(result.data?.items) }] };
         }
         case "create_bitable_app": { 
           const { name, folderToken } = request.params.arguments;

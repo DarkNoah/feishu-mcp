@@ -18,6 +18,10 @@
 
 在飞书多维表格中更新一条记录
 
+### list_fiedls
+
+获取多维表格数据表中的的所有字段
+
 ### search_records
 
 在多维表格中搜索符合条件的记录
@@ -72,7 +76,8 @@ node dist/index.js --sse --config "{\"appId\":\"xxx\",\"appSecret\":\"xxx\"}"
 - [删除记录API](https://open.larkoffice.com/document/server-docs/docs/bitable-v1/app-table-record/delete)
 - [创建多维表格应用API](https://open.larkoffice.com/document/server-docs/docs/bitable-v1/app/create)
 - [创建数据表API](https://open.larkoffice.com/document/server-docs/docs/bitable-v1/app-table/create)
-
+- [列出字段信息](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-field/list)
+  
 ## 许可证
 
 MIT 
